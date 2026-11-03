@@ -65,6 +65,22 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
     .table-wrap { overflow-x: auto; }
+    .product.selected { border: 2px solid #176b57; background: #f3faf7; }
+    .compare-button { border: 1px solid #176b57; color: #176b57; background: white; padding: 10px 12px; border-radius: 8px; cursor: pointer; font: inherit; font-weight: bold; }
+    .compare-button[aria-pressed="true"] { color: white; background: #176b57; }
+    .compare-button:disabled { opacity: .45; cursor: not-allowed; }
+    .compare-toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin: 8px 0 16px; }
+    .compare-toolbar p { margin: 0; color: #58656c; }
+    .clear-button { border: 1px solid #ccd6d1; background: white; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+    .clear-button:disabled { opacity: .5; cursor: not-allowed; }
+    .compare-table { min-width: 570px; table-layout: fixed; }
+    .compare-table th:first-child { width: 100px; }
+    .compare-table td, .compare-table th { vertical-align: top; overflow-wrap: anywhere; }
+    .compare-table td { min-width: 150px; }
+    .compare-table img { width: 110px; height: 110px; object-fit: contain; display: block; margin: auto; }
+    .compare-table .compare-price { font-size: 17px; font-weight: bold; color: #176b57; }
+    .compare-table .button { font-size: 13px; padding: 9px; }
+    .compare-table button { border: 0; background: none; text-decoration: underline; cursor: pointer; color: #176b57; }
     footer { text-align: center; padding: 24px; color: #777; }
   </style>
 </head>
@@ -101,15 +117,12 @@
     </section>
 
     <section class="panel">
-      <h2>商品比較表</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>商品名</th><th>カテゴリー</th><th>価格</th></tr>
-          </thead>
-          <tbody id="comparison"></tbody>
-        </table>
+      <h2>商品を比較する</h2>
+      <div class="compare-toolbar">
+        <p id="compare-status" role="status" aria-live="polite">商品一覧から比較したい商品を最大3件選んでください。</p>
+        <button type="button" id="clear-comparison" class="clear-button" disabled>選択をすべて解除</button>
       </div>
+      <div id="comparison" class="table-wrap"></div>
     </section>
   </main>
 
@@ -125,7 +138,10 @@
     const categorySelect = document.getElementById("category");
     const sortSelect = document.getElementById("sort");
     const productContainer = document.getElementById("products");
-    const comparisonBody = document.getElementById("comparison");
+    const comparisonContainer = document.getElementById("comparison");
+    const compareStatus = document.getElementById("compare-status");
+    const clearComparison = document.getElementById("clear-comparison");
+    const selectedIds = new Set();
     const status = document.getElementById("status");
     const yen = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 });
 
@@ -149,6 +165,7 @@
     function makeProductCard(p) {
       const card = document.createElement("article");
       card.className = "product";
+      if (selectedIds.has(p.id)) card.classList.add("selected");
       const imgUrl = validHttpsUrl(p.image);
       if (imgUrl) {
         const img = document.createElement("img");
@@ -160,6 +177,16 @@
       card.append(makeTextElement("h3", p.name));
       card.append(makeTextElement("p", p.category, "category-label"));
       card.append(makeTextElement("p", yen.format(p.price), "price"));
+      const compareButton = makeTextElement("button", selectedIds.has(p.id) ? "✓ 比較から外す" : "＋ 比較に追加", "compare-button");
+      compareButton.type = "button";
+      compareButton.setAttribute("aria-pressed", String(selectedIds.has(p.id)));
+      compareButton.disabled = !selectedIds.has(p.id) && selectedIds.size >= 3;
+      compareButton.addEventListener("click", () => {
+        if (selectedIds.has(p.id)) selectedIds.delete(p.id);
+        else if (selectedIds.size < 3) selectedIds.add(p.id);
+        render();
+      });
+      card.append(compareButton);
       const url = validHttpsUrl(p.url);
       if (url) {
         const link = makeTextElement("a", "楽天市場で商品を見る", "button");
@@ -171,6 +198,67 @@
       return card;
     }
 
+    function makeAffiliateLink(p) {
+      const url = validHttpsUrl(p.url);
+      if (!url) return makeTextElement("span", "リンクなし");
+      const link = makeTextElement("a", "楽天市場で見る", "button");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer sponsored";
+      return link;
+    }
+
+    function renderComparison() {
+      comparisonContainer.replaceChildren();
+      const chosen = products.filter(p => selectedIds.has(p.id));
+      compareStatus.textContent = chosen.length
+        ? `${chosen.length}/3件を選択中。検索・並べ替えを変えても選択は維持されます。`
+        : "商品一覧から比較したい商品を最大3件選んでください。";
+      clearComparison.disabled = chosen.length === 0;
+      if (!chosen.length) {
+        comparisonContainer.append(makeTextElement("p", "比較する商品を選択すると、ここに横並びで表示されます。", "empty"));
+        return;
+      }
+      const table = document.createElement("table");
+      table.className = "compare-table";
+      const tbody = document.createElement("tbody");
+      const fields = [
+        ["商品画像", p => {
+          const url = validHttpsUrl(p.image);
+          if (!url) return makeTextElement("span", "画像なし");
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = p.name;
+          img.loading = "lazy";
+          return img;
+        }],
+        ["商品名", p => makeTextElement("span", p.name)],
+        ["カテゴリー", p => makeTextElement("span", p.category)],
+        ["価格", p => makeTextElement("span", yen.format(p.price), "compare-price")],
+        ["商品ページ", p => makeAffiliateLink(p)],
+        ["選択解除", p => {
+          const btn = makeTextElement("button", "この商品を外す");
+          btn.type = "button";
+          btn.addEventListener("click", () => { selectedIds.delete(p.id); render(); });
+          return btn;
+        }]
+      ];
+      for (const [label, makeCellContent] of fields) {
+        const row = document.createElement("tr");
+        const th = makeTextElement("th", label);
+        th.scope = "row";
+        row.append(th);
+        for (const p of chosen) {
+          const td = document.createElement("td");
+          td.append(makeCellContent(p));
+          row.append(td);
+        }
+        tbody.append(row);
+      }
+      table.append(tbody);
+      comparisonContainer.append(table);
+    }
+
     function render() {
       const keyword = searchInput.value.trim().toLocaleLowerCase("ja-JP");
       const category = categorySelect.value;
@@ -178,29 +266,16 @@
         p.name.toLocaleLowerCase("ja-JP").includes(keyword) &&
         (!category || p.category === category)
       );
-      // 元の配列を変更せず、商品一覧と比較表を同じ順序にする。
       const sort = sortSelect.value;
-      if (sort === "price-asc") {
-        filtered.sort((a, b) => a.price - b.price);
-      } else if (sort === "price-desc") {
-        filtered.sort((a, b) => b.price - a.price);
-      }
+      if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
+      else if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
 
       productContainer.replaceChildren();
-      comparisonBody.replaceChildren();
-      for (const p of filtered) {
-        productContainer.append(makeProductCard(p));
-        const row = document.createElement("tr");
-        for (const value of [p.name, p.category, yen.format(p.price)]) {
-          row.append(makeTextElement("td", value));
-        }
-        comparisonBody.append(row);
-      }
-      if (!filtered.length) {
-        productContainer.append(makeTextElement("p", "該当する商品がありません。", "empty"));
-      }
+      for (const p of filtered) productContainer.append(makeProductCard(p));
+      if (!filtered.length) productContainer.append(makeTextElement("p", "該当する商品がありません。", "empty"));
       status.textContent = `${filtered.length}件の商品を表示中（登録 ${products.length}件）`;
       status.classList.remove("error");
+      renderComparison();
     }
 
     async function loadProducts() {
@@ -211,7 +286,8 @@
         if (!Array.isArray(data)) throw new Error("JSONが配列ではありません");
         products = data.filter(p => p && typeof p.name === "string" && p.name.trim() &&
           typeof p.category === "string" && Number.isFinite(Number(p.price)) && Number(p.price) >= 0)
-          .map(p => ({
+          .map((p, index) => ({
+            id: index,
             name: p.name,
             category: p.category,
             price: Number(p.price),
@@ -236,6 +312,7 @@
       }
     }
 
+    clearComparison.addEventListener("click", () => { selectedIds.clear(); render(); });
     searchInput.addEventListener("input", () => { if (products.length) render(); });
     categorySelect.addEventListener("change", () => { if (products.length) render(); });
     sortSelect.addEventListener("change", () => { if (products.length) render(); });
