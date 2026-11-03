@@ -81,6 +81,16 @@
     .compare-table .compare-price { font-size: 17px; font-weight: bold; color: #176b57; }
     .compare-table .button { font-size: 13px; padding: 9px; }
     .compare-table button { border: 0; background: none; text-decoration: underline; cursor: pointer; color: #176b57; }
+    .review { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 0; font-size: 14px; }
+    .review .star { color: #b4780a; font-weight: bold; }
+    .review .score { font-weight: bold; }
+    .review .count, .review-unavailable { color: #58656c; }
+    .review-unavailable { margin: 0; font-size: 13px; }
+    .description { font-size: 13px; line-height: 1.6; color: #526168; margin: 0; overflow-wrap: anywhere; }
+    .description summary { color: #176b57; cursor: pointer; font-weight: bold; margin-top: 6px; }
+    .description details p { margin: 6px 0 0; white-space: pre-wrap; max-height: 240px; overflow: auto; }
+    .compare-table .description { max-width: 300px; }
+    .data-note { margin: 12px 0 0; color: #647077; font-size: 12px; }
     footer { text-align: center; padding: 24px; color: #777; }
   </style>
 </head>
@@ -123,6 +133,7 @@
         <button type="button" id="clear-comparison" class="clear-button" disabled>選択をすべて解除</button>
       </div>
       <div id="comparison" class="table-wrap"></div>
+      <p class="data-note">レビュー・商品説明は楽天市場に掲載されている情報をもとに表示しています。内容、価格、在庫は商品ページでご確認ください。</p>
     </section>
   </main>
 
@@ -162,6 +173,40 @@
       return el;
     }
 
+    // 数値が不明・未評価の場合に、星0点と誤解させないようにする。
+    function reviewLabel(p) {
+      if (p.reviewAverage === null || p.reviewCount === null || p.reviewCount <= 0) return null;
+      return `★ ${p.reviewAverage.toFixed(1)} / 5（${p.reviewCount.toLocaleString("ja-JP")}件）`;
+    }
+
+    function makeReview(p) {
+      const label = reviewLabel(p);
+      if (!label) return makeTextElement("p", "レビュー情報なし", "review-unavailable");
+      const review = document.createElement("p");
+      review.className = "review";
+      review.setAttribute("aria-label", `レビュー評価 ${p.reviewAverage.toFixed(1)}点、${p.reviewCount}件`);
+      review.append(makeTextElement("span", "★", "star"));
+      review.append(makeTextElement("span", `${p.reviewAverage.toFixed(1)} / 5`, "score"));
+      review.append(makeTextElement("span", `（${p.reviewCount.toLocaleString("ja-JP")}件）`, "count"));
+      return review;
+    }
+
+    function makeDescription(p, maxLength = 110) {
+      if (!p.description) return makeTextElement("span", "商品説明なし", "review-unavailable");
+      const wrapper = document.createElement("div");
+      wrapper.className = "description";
+      if (p.description.length <= maxLength) {
+        wrapper.append(makeTextElement("span", p.description));
+        return wrapper;
+      }
+      wrapper.append(makeTextElement("span", `${p.description.slice(0, maxLength)}…`));
+      const details = document.createElement("details");
+      details.append(makeTextElement("summary", "商品説明をもっと見る"));
+      details.append(makeTextElement("p", p.description));
+      wrapper.append(details);
+      return wrapper;
+    }
+
     function makeProductCard(p) {
       const card = document.createElement("article");
       card.className = "product";
@@ -177,6 +222,8 @@
       card.append(makeTextElement("h3", p.name));
       card.append(makeTextElement("p", p.category, "category-label"));
       card.append(makeTextElement("p", yen.format(p.price), "price"));
+      card.append(makeReview(p));
+      card.append(makeDescription(p));
       const compareButton = makeTextElement("button", selectedIds.has(p.id) ? "✓ 比較から外す" : "＋ 比較に追加", "compare-button");
       compareButton.type = "button";
       compareButton.setAttribute("aria-pressed", String(selectedIds.has(p.id)));
@@ -235,6 +282,8 @@
         ["商品名", p => makeTextElement("span", p.name)],
         ["カテゴリー", p => makeTextElement("span", p.category)],
         ["価格", p => makeTextElement("span", yen.format(p.price), "compare-price")],
+        ["レビュー評価", p => makeReview(p)],
+        ["商品説明", p => makeDescription(p, 90)],
         ["商品ページ", p => makeAffiliateLink(p)],
         ["選択解除", p => {
           const btn = makeTextElement("button", "この商品を外す");
@@ -292,7 +341,10 @@
             category: p.category,
             price: Number(p.price),
             image: p.image,
-            url: p.url
+            url: p.url,
+            reviewAverage: Number.isFinite(Number(p.reviewAverage)) && p.reviewAverage !== null && p.reviewAverage !== "" && Number(p.reviewAverage) > 0 && Number(p.reviewAverage) <= 5 ? Number(p.reviewAverage) : null,
+            reviewCount: Number.isInteger(Number(p.reviewCount)) && p.reviewCount !== null && p.reviewCount !== "" && Number(p.reviewCount) >= 0 ? Number(p.reviewCount) : null,
+            description: typeof p.description === "string" ? p.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 3000) : ""
           }));
         // JSONに新しいカテゴリーが追加されても絞り込みに使えるようにします。
         const known = new Set([...categorySelect.options].map(o => o.value));
