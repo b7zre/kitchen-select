@@ -92,9 +92,16 @@
     .compare-table .description { max-width: 300px; }
     .data-note { margin: 12px 0 0; color: #647077; font-size: 12px; }
     footer { text-align: center; padding: 24px; color: #777; }
+    .pr-notice { margin: 0; padding: 10px 16px; background: #fff8e1; color: #4e3b00; border-bottom: 1px solid #f0d58a; font-size: 14px; line-height: 1.6; text-align: center; }
+    .pr-notice .pr-label { display: inline-block; margin-right: 8px; padding: 1px 8px; border: 1px solid #8a6d00; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .quality-flags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .quality-flags li { background: #fff4e5; color: #8a4b00; border: 1px solid #f3c58b; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: bold; }
+    .quality-note { margin: 0; font-size: 12px; color: #8a4b00; }
+    .no-flags { color: #58656c; font-size: 13px; }
   </style>
 </head>
 <body>
+  <p class="pr-notice" role="note"><span class="pr-label">PR</span>当サイトは楽天アフィリエイトを利用しており、ページ内に広告（PR）を含みます。商品リンクから購入されると当サイトに報酬が支払われる場合があります。</p>
   <header>
     <h1>キッチンセレクト</h1>
     <p>調理家電・キッチン用品を、わかりやすく比較。</p>
@@ -133,7 +140,7 @@
         <button type="button" id="clear-comparison" class="clear-button" disabled>選択をすべて解除</button>
       </div>
       <div id="comparison" class="table-wrap"></div>
-      <p class="data-note">レビュー・商品説明は楽天市場に掲載されている情報をもとに表示しています。内容、価格、在庫は商品ページでご確認ください。</p>
+      <p class="data-note">レビュー・商品説明は楽天市場に掲載されている情報をもとに表示しています。内容、価格、在庫は商品ページでご確認ください。「価格・構成の注意」は商品情報の取得時点で商品名の表記から自動判定したもので、クーポンの期限や価格は変わる場合があります。</p>
     </section>
   </main>
 
@@ -207,6 +214,21 @@
       return wrapper;
     }
 
+    // 価格・構成の注意フラグ。商品は除外せず、注意として表示します。
+    const EXPIRED_COUPON_FLAG = "期限切れクーポン表記あり";
+    function makeQualityFlags(p, withNote = true) {
+      if (!p.qualityFlags.length) return null;
+      const wrapper = document.createElement("div");
+      const list = document.createElement("ul");
+      list.className = "quality-flags";
+      list.setAttribute("aria-label", "価格・構成の注意");
+      for (const flag of p.qualityFlags) list.append(makeTextElement("li", `⚠ ${flag}`));
+      wrapper.append(list);
+      if (withNote) wrapper.append(makeTextElement("p", "表示価格と購入時の価格・構成が異なる場合があります。商品ページでご確認ください。", "quality-note"));
+      if (withNote && p.qualityFlags.includes(EXPIRED_COUPON_FLAG)) wrapper.append(makeTextElement("p", "商品名のクーポン表記は掲載期限を過ぎています。現在のクーポンの有無は商品ページでご確認ください。", "quality-note"));
+      return wrapper;
+    }
+
     function makeProductCard(p) {
       const card = document.createElement("article");
       card.className = "product";
@@ -222,6 +244,8 @@
       card.append(makeTextElement("h3", p.name));
       card.append(makeTextElement("p", p.category, "category-label"));
       card.append(makeTextElement("p", yen.format(p.price), "price"));
+      const flags = makeQualityFlags(p);
+      if (flags) card.append(flags);
       card.append(makeReview(p));
       card.append(makeDescription(p));
       const compareButton = makeTextElement("button", selectedIds.has(p.id) ? "✓ 比較から外す" : "＋ 比較に追加", "compare-button");
@@ -282,6 +306,7 @@
         ["商品名", p => makeTextElement("span", p.name)],
         ["カテゴリー", p => makeTextElement("span", p.category)],
         ["価格", p => makeTextElement("span", yen.format(p.price), "compare-price")],
+        ["価格・構成の注意", p => makeQualityFlags(p, false) || makeTextElement("span", "特記事項なし", "no-flags")],
         ["レビュー評価", p => makeReview(p)],
         ["商品説明", p => makeDescription(p, 90)],
         ["商品ページ", p => makeAffiliateLink(p)],
@@ -344,6 +369,7 @@
             url: p.url,
             reviewAverage: Number.isFinite(Number(p.reviewAverage)) && p.reviewAverage !== null && p.reviewAverage !== "" && Number(p.reviewAverage) > 0 && Number(p.reviewAverage) <= 5 ? Number(p.reviewAverage) : null,
             reviewCount: Number.isInteger(Number(p.reviewCount)) && p.reviewCount !== null && p.reviewCount !== "" && Number(p.reviewCount) >= 0 ? Number(p.reviewCount) : null,
+            qualityFlags: Array.isArray(p.qualityFlags) ? [...new Set(p.qualityFlags.filter(f => typeof f === "string" && f.trim()).map(f => f.trim().slice(0, 40)))].slice(0, 5) : [],
             description: typeof p.description === "string" ? p.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 3000) : ""
           }));
         // JSONに新しいカテゴリーが追加されても絞り込みに使えるようにします。
