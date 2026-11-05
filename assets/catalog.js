@@ -108,7 +108,18 @@
     return img;
   }
 
+  // 任意設定（指定しない場合は従来どおりカテゴリーのみで絞り込みます）:
+  //   minPrice / maxPrice … 表示価格で絞り込む（数値のときだけ有効）
+  //   label               … 件数表示・該当なし表示で使う名前（省略時は category）
+  //   onLoad(products)    … 読み込み成功後に、表示対象商品のコピーを渡して呼び出す
+  function withinPrice(p, config) {
+    if (Number.isFinite(config.minPrice) && p.price < config.minPrice) return false;
+    if (Number.isFinite(config.maxPrice) && p.price > config.maxPrice) return false;
+    return true;
+  }
+
   function init(config) {
+    const label = typeof config.label === "string" && config.label ? config.label : config.category;
     const root = document.getElementById(config.listId);
     const status = document.getElementById(config.statusId);
     const sortSelect = document.getElementById(config.sortId);
@@ -222,7 +233,7 @@
 
     function render() {
       renderList();
-      status.textContent = `${config.category}を${products.length}件表示中`;
+      status.textContent = `${label}を${products.length}件表示中`;
       status.classList.remove("error");
       renderComparison();
     }
@@ -235,15 +246,27 @@
       status.classList.add("error");
     }
 
+    // ページ側の追加表示（一覧表など）用。失敗しても商品一覧の表示は止めません。
+    function notifyLoaded() {
+      if (typeof config.onLoad !== "function") return;
+      try {
+        config.onLoad(products.map(p => ({ ...p, qualityFlags: [...p.qualityFlags] })));
+      } catch (error) {
+        console.error("onLoad の処理に失敗:", error);
+      }
+    }
+
     async function load() {
       try {
         const response = await fetch(config.jsonUrl, { cache: "no-cache" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error("JSONが配列ではありません");
-        products = data.filter(isValidProduct).map(normalize).filter(p => p.category === config.category);
+        products = data.filter(isValidProduct).map(normalize)
+          .filter(p => p.category === config.category && withinPrice(p, config));
+        notifyLoaded();
         if (!products.length) {
-          showError(`現在表示できる${config.category}の商品がありません。`);
+          showError(`現在表示できる${label}の商品がありません。`);
           renderComparison();
           return;
         }
