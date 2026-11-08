@@ -108,6 +108,59 @@
     return img;
   }
 
+  // 画面下部の「比較中」固定バー。選択が1件以上のときだけ表示します。
+  // 選択状態は持たず、件数は呼び出し側（renderComparison）から update() で受け取ります。
+  function createCompareBar(target, onClear) {
+    const bar = document.createElement("div");
+    bar.className = "compare-bar";
+    bar.setAttribute("role", "region");
+    bar.setAttribute("aria-label", "比較中の商品");
+    bar.hidden = true;
+    const inner = document.createElement("div");
+    inner.className = "compare-bar-inner";
+    const count = document.createElement("p");
+    count.className = "compare-bar-count";
+    const actions = document.createElement("div");
+    actions.className = "compare-bar-actions";
+    const viewButton = makeTextElement("button", "比較表を見る", "compare-bar-view");
+    viewButton.type = "button";
+    if (target.id) viewButton.setAttribute("aria-controls", target.id);
+    const clearButton = makeTextElement("button", "全解除", "compare-bar-clear");
+    clearButton.type = "button";
+    clearButton.setAttribute("aria-label", "比較の選択をすべて解除");
+    actions.append(viewButton, clearButton);
+    inner.append(count, actions);
+    bar.append(inner);
+
+    // 比較表の見出しへフォーカスを移し、キーボード操作でも続けて比較表を操作できるようにします。
+    function focusTarget() {
+      const heading = target.querySelector("h2") || target;
+      if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+      heading.focus({ preventScroll: true });
+    }
+    viewButton.addEventListener("click", () => {
+      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      focusTarget();
+    });
+    clearButton.addEventListener("click", onClear);
+    document.body.append(bar);
+
+    return {
+      update(selectedCount, max) {
+        const hadFocus = bar.contains(document.activeElement);
+        const visible = document.createElement("span");
+        visible.setAttribute("aria-hidden", "true");
+        visible.append("比較中 ", makeTextElement("strong", `${selectedCount}/${max}`));
+        count.replaceChildren(visible, makeTextElement("span", `比較中の商品 ${selectedCount}件（最大${max}件）`, "visually-hidden"));
+        bar.hidden = selectedCount === 0;
+        document.documentElement.classList.toggle("has-compare-bar", selectedCount > 0);
+        // バーが消えるときにフォーカスを失わないよう、比較表の見出しへ移します。
+        if (bar.hidden && hadFocus) focusTarget();
+      }
+    };
+  }
+
   // 任意設定（指定しない場合は従来どおりカテゴリーのみで絞り込みます）:
   //   minPrice / maxPrice … 表示価格で絞り込む（数値のときだけ有効）
   //   label               … 件数表示・該当なし表示で使う名前（省略時は category）
@@ -192,6 +245,7 @@
         ? `${chosen.length}/${MAX_COMPARE}件を選択中。並べ替えを変えても選択は維持されます。`
         : `一覧から比較したい商品を最大${MAX_COMPARE}件選んでください。`;
       clearComparison.disabled = chosen.length === 0;
+      compareBar.update(chosen.length, MAX_COMPARE);
       if (!chosen.length) {
         comparisonContainer.append(makeTextElement("p", "比較する商品を選択すると、ここに横並びで表示されます。", "empty"));
         return;
@@ -277,7 +331,13 @@
       }
     }
 
-    clearComparison.addEventListener("click", () => { selectedIds.clear(); render(); });
+    function clearAll() {
+      selectedIds.clear();
+      render();
+    }
+    const compareBar = createCompareBar(comparisonContainer.closest("section") || comparisonContainer, clearAll);
+
+    clearComparison.addEventListener("click", clearAll);
     sortSelect.addEventListener("change", () => { if (products.length) render(); });
     load();
   }
