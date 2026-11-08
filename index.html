@@ -116,6 +116,13 @@
     .quality-note { margin: 0; font-size: 12px; color: #8a4b00; }
     .no-flags { color: #58656c; font-size: 13px; }
     .list-note { margin: 0 0 12px; color: #58656c; font-size: 14px; line-height: 1.7; }
+    .flag-legend { margin: 0 0 16px; border: 1px solid #f3dcb8; border-radius: 8px; background: #fffbf5; font-size: 14px; }
+    .flag-legend summary { padding: 11px 12px; color: #8a4b00; font-weight: bold; line-height: 1.6; cursor: pointer; overflow-wrap: anywhere; }
+    .flag-legend summary:focus-visible { outline: 3px solid #0d4a3c; outline-offset: 2px; border-radius: 8px; }
+    .flag-legend-intro, .flag-legend-note { margin: 0 12px 12px; color: #4e5a60; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+    .flag-legend dl { margin: 0 12px 12px; }
+    .flag-legend dt { width: fit-content; max-width: 100%; margin: 12px 0 4px; padding: 3px 8px; border: 1px solid #f3c58b; border-radius: 6px; background: #fff4e5; color: #8a4b00; font-size: 12px; font-weight: bold; overflow-wrap: anywhere; }
+    .flag-legend dd { margin: 0; color: #263238; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
     .category-nav { background: #ffffff; border-bottom: 1px solid #dfe7e3; padding: 10px 16px; }
     .category-nav ul { max-width: 1100px; margin: 0 auto; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
     .category-nav a { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px 18px; border: 1px solid #cfe0d9; border-radius: 999px; background: #f3faf7; color: #176b57; font-size: 15px; text-decoration: none; white-space: nowrap; }
@@ -202,6 +209,21 @@
     <section class="panel">
       <h2>商品一覧</h2>
       <p class="list-note">掲載順は当サイトのおすすめ順ではありません。商品名に含まれる「ランキング1位」「ポイントアップ」「クーポン」などの言葉は、販売しているショップ側の表記です。当サイトの評価や順位ではありません。</p>
+      <details class="flag-legend">
+        <summary>⚠「価格・構成の注意」の見方</summary>
+        <p class="flag-legend-intro">商品の「⚠」は、商品情報を取得した時点の商品名の表記から、自動で付けている目印です。商品の品質や性能を評価したものではありません。</p>
+        <dl>
+          <dt>⚠ 構成選択・価格要確認</dt>
+          <dd>商品名に、複数の色・サイズ・容量・点数・型番など、商品の構成の違いを示す表記があります。選ぶ内容によって、価格や届く商品が変わる場合があります。</dd>
+          <dt>⚠ クーポン適用価格要確認</dt>
+          <dd>商品名にクーポンの表記があります。クーポンの有無や利用条件によって、購入時の価格が表示価格と異なる場合があります。</dd>
+          <dt>⚠ 価格差15%以上・要確認</dt>
+          <dd>商品名にある価格・割引などの表記から推定した価格と、表示価格との差が15%以上あります。どの価格で購入できるかは、商品ページで確認してください。</dd>
+          <dt>⚠ 期限切れクーポン表記あり</dt>
+          <dd>商品名に、商品情報を取得した時点で期限切れと判断できるクーポン表記があります。現在利用できるクーポンがあるかどうかは、商品ページで確認してください。</dd>
+        </dl>
+        <p class="flag-legend-note">商品名の表記だけから自動で判定しているため、付くべき商品に付かないことや、実際と合わない内容で付くことがあります。⚠がない商品も、購入前に楽天市場の商品ページで価格・商品構成・クーポンの条件を確認してください。</p>
+      </details>
       <p id="status" class="status" role="status" aria-live="polite">商品情報を読み込み中です…</p>
       <noscript><p class="status error">商品一覧の表示、検索・絞り込み、比較にはJavaScriptが必要です。ブラウザの設定でJavaScriptを有効にしてください。キッチンセレクトは、炊飯器・電気ケトル・電子レンジ・ノンフライヤー・フライパンを楽天市場の掲載情報をもとに比較できるサイトです。</p></noscript>
       <div id="products" class="products"></div>
