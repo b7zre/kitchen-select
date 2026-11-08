@@ -111,6 +111,21 @@
     .quality-flags li { background: #fff4e5; color: #8a4b00; border: 1px solid #f3c58b; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: bold; }
     .quality-note { margin: 0; font-size: 12px; color: #8a4b00; }
     .no-flags { color: #58656c; font-size: 13px; }
+    .product .price-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+    .product .price-row .price { margin: 0; }
+    .product .product-name-wrap { display: flex; flex-direction: column; align-items: flex-start; }
+    .product .product-name { margin: 0; font-size: 15px; line-height: 1.55; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+    .product .product-name.expanded { display: block; -webkit-line-clamp: unset; line-clamp: none; overflow: visible; }
+    .product .category-label { font-size: 13px; }
+    .text-toggle { border: 0; background: none; padding: 4px 0; color: #176b57; font: inherit; font-size: 13px; font-weight: bold; text-decoration: underline; cursor: pointer; }
+    .product .button.product-cta { display: block; margin-top: 4px; padding: 12px 16px; font-size: 16px; font-weight: bold; text-align: center; box-shadow: 0 2px 0 #0d4a3c; }
+    .product .button.product-cta:hover { background: #125846; }
+    .product .compare-button { padding: 8px 12px; font-size: 14px; }
+    .product .compare-button[aria-pressed="true"] { color: #176b57; background: #e3f2ec; }
+    .product .description-toggle-wrap { display: flex; flex-direction: column; align-items: flex-start; }
+    .product .description-body { margin: 4px 0 0; max-height: 240px; overflow: auto; font-size: 13px; line-height: 1.6; color: #526168; overflow-wrap: anywhere; }
+    .product .text-toggle:focus-visible, .product .button.product-cta:focus-visible, .product .compare-button:focus-visible, .product .description-body:focus-visible { outline: 3px solid #0d4a3c; outline-offset: 2px; }
+    @media (max-width: 600px) { .product img { height: 150px; } }
     .compare-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; background: #ffffff; border-top: 2px solid #176b57; box-shadow: 0 -4px 14px #00000014; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
     .compare-bar[hidden] { display: none; }
     .compare-bar-inner { max-width: 1100px; margin: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }

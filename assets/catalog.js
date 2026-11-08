@@ -75,6 +75,77 @@
     return wrapper;
   }
 
+  // ---- 商品カード用の部品（比較表では使いません） ----
+  let uid = 0;
+
+  // 開閉ボタン（aria-expanded / aria-controls 付き）。開閉状態は expandedSet に商品IDで保存し、
+  // 比較の選択などで一覧を描き直しても開いた状態を保ちます。
+  function makeToggle(p, expandedSet, target, labels, apply) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "text-toggle";
+    toggle.setAttribute("aria-controls", target.id);
+    function set(expanded) {
+      toggle.setAttribute("aria-expanded", String(expanded));
+      toggle.textContent = expanded ? labels.close : labels.open;
+      apply(expanded);
+    }
+    set(expandedSet.has(p.id));
+    toggle.addEventListener("click", () => {
+      const next = !expandedSet.has(p.id);
+      if (next) expandedSet.add(p.id);
+      else expandedSet.delete(p.id);
+      set(next);
+    });
+    return toggle;
+  }
+
+  // 商品名：CSS で3行に省略します（文字列は加工しません）。省略されているときだけ全文表示ボタンを出します。
+  function makeProductName(p, tag, expandedNames) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "product-name-wrap";
+    const heading = makeTextElement(tag, p.name, "product-name");
+    heading.id = `product-name-${++uid}`;
+    const toggle = makeToggle(p, expandedNames, heading, { open: "商品名を全文表示", close: "商品名を閉じる" },
+      expanded => heading.classList.toggle("expanded", expanded));
+    toggle.classList.add("name-toggle");
+    toggle.hidden = true;
+    wrapper.append(heading, toggle);
+    return wrapper;
+  }
+
+  // 省略されているかはレイアウト後でないと分からないため、描画後と画面幅の変更時に確認します。
+  function updateNameToggles(container) {
+    for (const wrapper of container.querySelectorAll(".product-name-wrap")) {
+      const heading = wrapper.querySelector(".product-name");
+      const toggle = wrapper.querySelector(".name-toggle");
+      toggle.hidden = !heading.classList.contains("expanded") && heading.scrollHeight <= heading.clientHeight + 1;
+    }
+  }
+
+  // 商品説明：初期状態では折りたたみ、「商品説明を見る」で全文を表示します（中身は加工しません）。
+  function makeCollapsibleDescription(p, expandedDescriptions) {
+    if (!p.description) return makeTextElement("p", "商品説明なし", "review-unavailable");
+    const wrapper = document.createElement("div");
+    wrapper.className = "description-toggle-wrap";
+    const body = makeTextElement("p", p.description, "description-body");
+    body.id = `product-description-${++uid}`;
+    body.tabIndex = 0; // 長い説明は枠内でスクロールするため、キーボードでもスクロールできるようにします。
+    const toggle = makeToggle(p, expandedDescriptions, body, { open: "商品説明を見る", close: "商品説明を閉じる" },
+      expanded => { body.hidden = !expanded; });
+    toggle.classList.add("description-toggle");
+    wrapper.append(toggle, body);
+    return wrapper;
+  }
+
+  // 価格とレビューを1行にまとめ、カード上部に置きます。
+  function makePriceRow(p) {
+    const row = document.createElement("div");
+    row.className = "price-row";
+    row.append(makeTextElement("p", yen.format(p.price), "price"), makeReview(p));
+    return row;
+  }
+
   function makeQualityFlags(p, withNote) {
     if (!p.qualityFlags.length) return null;
     const wrapper = document.createElement("div");
@@ -180,6 +251,8 @@
     const compareStatus = document.getElementById(config.compareStatusId);
     const clearComparison = document.getElementById(config.clearId);
     const selectedIds = new Set();
+    const expandedNames = new Set();
+    const expandedDescriptions = new Set();
     let products = [];
 
     function makeProductCard(p) {
@@ -187,14 +260,18 @@
       const card = document.createElement("article");
       card.className = "product";
       if (selected) card.classList.add("selected");
+      // 表示順：画像 → 価格・レビュー → 商品名 → 価格・構成の注意 → 楽天市場（主ボタン） → 比較 → 商品説明
       const img = makeImage(p);
       if (img) card.append(img);
-      card.append(makeTextElement("h4", p.name));
-      card.append(makeTextElement("p", yen.format(p.price), "price"));
+      card.append(makePriceRow(p));
+      card.append(makeProductName(p, "h4", expandedNames));
       const flags = makeQualityFlags(p, true);
       if (flags) card.append(flags);
-      card.append(makeReview(p));
-      card.append(makeDescription(p, 110));
+      const link = makeAffiliateLink(p, "楽天市場で商品を見る");
+      if (link) {
+        link.classList.add("product-cta");
+        card.append(link);
+      }
       const compareButton = makeTextElement("button", selected ? "✓ 比較から外す" : "＋ 比較に追加", "compare-button");
       compareButton.type = "button";
       compareButton.setAttribute("aria-pressed", String(selected));
@@ -205,8 +282,7 @@
         render();
       });
       card.append(compareButton);
-      const link = makeAffiliateLink(p, "楽天市場で商品を見る");
-      if (link) card.append(link);
+      card.append(makeCollapsibleDescription(p, expandedDescriptions));
       return card;
     }
 
@@ -236,6 +312,7 @@
         section.append(grid);
         root.append(section);
       }
+      updateNameToggles(root);
     }
 
     function renderComparison() {
@@ -338,6 +415,11 @@
     const compareBar = createCompareBar(comparisonContainer.closest("section") || comparisonContainer, clearAll);
 
     clearComparison.addEventListener("click", clearAll);
+    let resizeTimer = 0;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => updateNameToggles(root), 150);
+    });
     sortSelect.addEventListener("change", () => { if (products.length) render(); });
     load();
   }
