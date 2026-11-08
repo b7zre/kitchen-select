@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>Kitchen Select 調理家電・キッチン用品を比較</title>
+  <!-- Kitchen Select 共通OGP画像の元データ。PNG（assets/ogp.png）はこのSVGから書き出す。
+       価格・商品数・順位など変わる情報や、外部の画像・ロゴは入れない。 -->
+  <style>
+    text { font-family: "Yu Gothic UI", "Yu Gothic", "Meiryo", "Hiragino Sans", "Noto Sans JP", sans-serif; }
+    .title { font-size: 84px; font-weight: 700; fill: #176b57; }
+    .sub { font-size: 50px; font-weight: 700; fill: #263238; }
+    .chip { fill: #eef6f3; stroke: #176b57; stroke-width: 2; }
+    .chip-text { font-size: 28px; font-weight: 700; fill: #176b57; }
+    .note { font-size: 28px; fill: #58656c; }
+  </style>
+  <rect width="1200" height="630" fill="#176b57"/>
+  <rect x="40" y="40" width="1120" height="550" rx="36" fill="#ffffff"/>
+
+  <!-- アイコン（favicon と同じ図柄） -->
+  <g transform="translate(110 104) scale(1.75)">
+    <rect width="64" height="64" rx="14" fill="#176b57"/>
+    <rect x="28" y="12" width="8" height="5" rx="2" fill="#ffffff"/>
+    <path d="M14 22h36v4H14z" fill="#ffffff"/>
+    <path d="M16 29h32v15a8 8 0 0 1-8 8H24a8 8 0 0 1-8-8z" fill="#ffffff"/>
+    <path d="M7 32h7v5H7zM50 32h7v5h-7z" fill="#ffffff"/>
+    <path d="M24 40l5 5 11-11" fill="none" stroke="#176b57" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text class="title" x="250" y="190">Kitchen Select</text>
+
+  <text class="sub" x="110" y="310">調理家電・キッチン用品を比較</text>
+  <rect x="110" y="345" width="980" height="4" rx="2" fill="#d7e7e1"/>
+
+  <!-- 5カテゴリ -->
+  <g>
+    <rect class="chip" x="110" y="390" width="128" height="64" rx="32"/>
+    <text class="chip-text" x="174" y="432" text-anchor="middle">炊飯器</text>
+    <rect class="chip" x="260" y="390" width="180" height="64" rx="32"/>
+    <text class="chip-text" x="350" y="432" text-anchor="middle">電気ケトル</text>
+    <rect class="chip" x="462" y="390" width="180" height="64" rx="32"/>
+    <text class="chip-text" x="552" y="432" text-anchor="middle">電子レンジ</text>
+    <rect class="chip" x="664" y="390" width="224" height="64" rx="32"/>
+    <text class="chip-text" x="776" y="432" text-anchor="middle">ノンフライヤー</text>
+    <rect class="chip" x="910" y="390" width="180" height="64" rx="32"/>
+    <text class="chip-text" x="1000" y="432" text-anchor="middle">フライパン</text>
+  </g>
+
+  <text class="note" x="110" y="535">価格帯ごとに商品を並べて比較できます</text>
+</svg>

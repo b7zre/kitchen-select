@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -13,7 +12,15 @@
   <meta property="og:description" content="炊飯器・電気ケトル・電子レンジなどの調理家電を、楽天市場の掲載情報をもとに価格・レビューで比較できます。">
   <meta property="og:url" content="https://b7zre.github.io/kitchen-select/">
   <meta property="og:locale" content="ja_JP">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://b7zre.github.io/kitchen-select/assets/ogp.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Kitchen Select（キッチンセレクト）調理家電・キッチン用品を比較">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#176b57">
   <meta name="google-site-verification" content="oV5mDZlUI1HmpnwJafbBK-RZwdCPhyyJUqwn-aJvbbQ" />
   <style>
     * { box-sizing: border-box; }
@@ -108,6 +115,7 @@
     .quality-flags li { background: #fff4e5; color: #8a4b00; border: 1px solid #f3c58b; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: bold; }
     .quality-note { margin: 0; font-size: 12px; color: #8a4b00; }
     .no-flags { color: #58656c; font-size: 13px; }
+    .list-note { margin: 0 0 12px; color: #58656c; font-size: 14px; line-height: 1.7; }
   </style>
 </head>
 <body>
@@ -131,7 +139,7 @@
       </select>
       <label for="sort">並べ替え</label>
       <select id="sort" aria-label="商品の並べ替え">
-        <option value="default">標準順</option>
+        <option value="default">取得順（おすすめ順ではありません）</option>
         <option value="price-asc">価格が安い順</option>
         <option value="price-desc">価格が高い順</option>
       </select>
@@ -144,6 +152,7 @@
 
     <section class="panel">
       <h2>商品一覧</h2>
+      <p class="list-note">掲載順は当サイトのおすすめ順ではありません。商品名に含まれる「ランキング1位」「ポイントアップ」「クーポン」などの言葉は、販売しているショップ側の表記です。当サイトの評価や順位ではありません。</p>
       <p id="status" class="status" role="status" aria-live="polite">商品情報を読み込み中です…</p>
       <noscript><p class="status error">商品一覧の表示、検索・絞り込み、比較にはJavaScriptが必要です。ブラウザの設定でJavaScriptを有効にしてください。キッチンセレクトは、炊飯器・電気ケトル・電子レンジ・ノンフライヤー・フライパンを楽天市場の掲載情報をもとに比較できるサイトです。</p></noscript>
       <div id="products" class="products"></div>
@@ -161,7 +170,7 @@
   </main>
 
   <footer>
-    <p>広告・アフィリエイトリンクを含む場合があります。価格や在庫は楽天市場の商品ページでご確認ください。</p>
+    <p>当サイトは楽天アフィリエイトを利用しており、ページ内に広告（PR）を含みます。価格や在庫は楽天市場の商品ページでご確認ください。</p>
     <p>© キッチンセレクト</p>
   </footer>
 
@@ -400,7 +409,7 @@
         }
         render();
       } catch (error) {
-        status.textContent = "商品情報を読み込めませんでした。site_products.json が同じフォルダにあるか確認してください。";
+        status.textContent = "商品情報を読み込めませんでした。時間をおいて再度お試しください。";
         status.classList.add("error");
         console.error("商品データの読み込み失敗:", error);
       }
